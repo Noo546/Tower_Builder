@@ -5,7 +5,6 @@ from . import util
 
 ROOT_RESOURCE_DIR = "C:/Users/NAC/Documents/maya/2026/scripts"
 
-# ---------------- SETTINGS DIALOG ----------------
 class SettingsDialog(QtWidgets.QDialog):
     def __init__(self, parent=None, current_mode="EASY"):
         super().__init__(parent)
@@ -23,7 +22,6 @@ class SettingsDialog(QtWidgets.QDialog):
         self.label = QtWidgets.QLabel("Select Difficulty Mode:")
         self.mainLayout.addWidget(self.label)
 
-        # Radio buttons for modes
         self.easyRadio = QtWidgets.QRadioButton("Easy")
         self.normalRadio = QtWidgets.QRadioButton("Normal")
         self.hardRadio = QtWidgets.QRadioButton("Hard")
@@ -39,7 +37,6 @@ class SettingsDialog(QtWidgets.QDialog):
         self.mainLayout.addWidget(self.normalRadio)
         self.mainLayout.addWidget(self.hardRadio)
 
-        # Apply / Cancel buttons
         self.buttonLayout = QtWidgets.QHBoxLayout()
         self.applyBtn = QtWidgets.QPushButton("Apply")
         self.cancelBtn = QtWidgets.QPushButton("Cancel")
@@ -74,8 +71,6 @@ class SettingsDialog(QtWidgets.QDialog):
         else:
             return "HARD"
 
-
-# ---------------- MAIN TOWER BUILDER UI ----------------
 class TowerBuilderDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -87,7 +82,6 @@ class TowerBuilderDialog(QtWidgets.QDialog):
         self.mainLayout = QtWidgets.QVBoxLayout()
         self.setLayout(self.mainLayout)
 
-        # ---------- HEADER IMAGE ----------
         self.imageLabel = QtWidgets.QLabel()
         self.imagePixmap = QtGui.QPixmap(f"{ROOT_RESOURCE_DIR}/TowerBuilder/Image/001.png")
         scaled_pixmap = self.imagePixmap.scaled(
@@ -99,7 +93,6 @@ class TowerBuilderDialog(QtWidgets.QDialog):
         self.imageLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.mainLayout.addWidget(self.imageLabel)
 
-        # ---------- INFO ----------
         self.infoLayout = QtWidgets.QHBoxLayout()
         self.scoreLabel = QtWidgets.QLabel("Score: 0")
         self.blockLabel = QtWidgets.QLabel("Blocks: 0")
@@ -109,7 +102,6 @@ class TowerBuilderDialog(QtWidgets.QDialog):
         self.infoLayout.addWidget(self.modeLabel)
         self.mainLayout.addLayout(self.infoLayout)
 
-        # ---------- BUTTONS ----------
         self.buttonLayout = QtWidgets.QHBoxLayout()
         self.startBtn = QtWidgets.QPushButton("Start Game")
         self.dropBtn = QtWidgets.QPushButton("Drop Block")
@@ -135,47 +127,47 @@ class TowerBuilderDialog(QtWidgets.QDialog):
 
         self.mainLayout.addLayout(self.buttonLayout)
 
-        # ---------- LOG BOX ----------
         self.logBox = QtWidgets.QTextEdit()
         self.logBox.setReadOnly(True)
         self.logBox.setStyleSheet("color: black; background-color: #FFFBEA;")
         self.mainLayout.addWidget(self.logBox)
 
-        # ---------- SIGNALS ----------
         self.startBtn.clicked.connect(self.startGame)
         self.dropBtn.clicked.connect(self.dropBlock)
         self.resetBtn.clicked.connect(self.resetGame)
         self.settingBtn.clicked.connect(self.openSettings)
 
-        # ---------- STATE ----------
         self.score = 0
         self.blockCount = 0
         self.gameActive = False
         self.currentMode = "EASY"
 
-    # ---------- GAME FUNCTIONS ----------
     def startGame(self):
         self.log("Game started.")
         util.reset_scene()
-        util.create_base()
-        self.score = 0
+        util.create_base()  
         self.blockCount = 0
+        self.score = 0
         self.updateLabels()
         self.gameActive = True
+
 
     def dropBlock(self):
         if not self.gameActive:
             self.log("Please start the game first!")
             return
-        result = util.dropBlock(self.blockCount)
-        if result:
-            self.score += 1
-            self.blockCount += 1
-            self.log(f"✅ Block {self.blockCount} placed successfully.")
+
+        if util.current_block is None:
+            util.create_moving_block(self.blockCount)
+            self.log(f"🧱 Block {self.blockCount + 1} is moving... Click Drop again to release.")
         else:
-            self.log("💥 Game Over! Tower collapsed!")
-            self.gameActive = False
-        self.updateLabels()
+            util.drop_block(self.blockCount)
+            self.blockCount += 1
+            self.score += 1
+            self.updateLabels()
+            self.log(f"✅ Block {self.blockCount} placed. Next block ready!")
+
+
 
     def resetGame(self):
         util.reset_scene()
@@ -192,7 +184,6 @@ class TowerBuilderDialog(QtWidgets.QDialog):
             self.modeLabel.setText(f"Mode: {self.currentMode}")
             self.log(f"Changed mode to {self.currentMode}")
 
-    # ---------- UI HELPERS ----------
     def updateLabels(self):
         self.scoreLabel.setText(f"Score: {self.score}")
         self.blockLabel.setText(f"Blocks: {self.blockCount}")
@@ -201,7 +192,6 @@ class TowerBuilderDialog(QtWidgets.QDialog):
         self.logBox.append(message)
 
 
-# ---------------- RUN DIALOG ----------------
 def run():
     global ui
     try:
