@@ -53,13 +53,11 @@ class SettingsDialog(QtWidgets.QDialog):
                 }
                 QPushButton:hover {
                     background-color: #F9B872;
-                    color: black;
                 }
             """)
             self.buttonLayout.addWidget(btn)
 
         self.mainLayout.addLayout(self.buttonLayout)
-
         self.applyBtn.clicked.connect(self.accept)
         self.cancelBtn.clicked.connect(self.reject)
 
@@ -70,6 +68,7 @@ class SettingsDialog(QtWidgets.QDialog):
             return "NORMAL"
         else:
             return "HARD"
+
 
 class TowerBuilderDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
@@ -120,7 +119,6 @@ class TowerBuilderDialog(QtWidgets.QDialog):
                 }
                 QPushButton:hover {
                     background-color: #F9B872;
-                    color: black;
                 }
             """)
             self.buttonLayout.addWidget(btn)
@@ -143,35 +141,37 @@ class TowerBuilderDialog(QtWidgets.QDialog):
         self.currentMode = "EASY"
 
     def startGame(self):
-        self.log("Game started.")
+        self.log("🎮 Game started.")
         util.reset_scene()
-        util.create_base()  
+        util.create_base()
         self.blockCount = 0
         self.score = 0
         self.updateLabels()
         self.gameActive = True
 
-
     def dropBlock(self):
         if not self.gameActive:
-            self.log("Please start the game first!")
+            self.log("⚠ Please start the game first.")
             return
 
         if util.current_block is None:
-            util.create_moving_block(self.blockCount)
-            self.log(f"🧱 Block {self.blockCount + 1} is moving... Click Drop again to release.")
+            util.create_moving_block(self.blockCount, self.currentMode)
+            speed_text = {"EASY": "Slow", "NORMAL": "Normal", "HARD": "Fast"}[self.currentMode]
+            self.log(f"🧱 Block {self.blockCount + 1} moving... (Mode: {self.currentMode}, Speed: {speed_text})")
         else:
-            util.drop_block(self.blockCount)
-            self.blockCount += 1
-            self.score += 1
-            self.updateLabels()
-            self.log(f"✅ Block {self.blockCount} placed. Next block ready!")
-
-
+            success, _ = util.drop_block(self.blockCount, self.currentMode)
+            if success:
+                self.score += 1
+                self.blockCount += 1
+                self.updateLabels()
+                self.log(f"✅ Block {self.blockCount} placed successfully!")
+            else:
+                self.log("💥 Tower collapsed! Game Over!")
+                self.gameActive = False
 
     def resetGame(self):
         util.reset_scene()
-        self.log("Scene cleared. Ready to restart.")
+        self.log("🔁 Scene cleared. Ready to restart.")
         self.score = 0
         self.blockCount = 0
         self.updateLabels()
@@ -182,7 +182,7 @@ class TowerBuilderDialog(QtWidgets.QDialog):
         if dialog.exec():
             self.currentMode = dialog.selectedMode()
             self.modeLabel.setText(f"Mode: {self.currentMode}")
-            self.log(f"Changed mode to {self.currentMode}")
+            self.log(f"⚙️ Changed mode to {self.currentMode}")
 
     def updateLabels(self):
         self.scoreLabel.setText(f"Score: {self.score}")
@@ -198,7 +198,6 @@ def run():
         ui.close()
     except:
         pass
-
     ptr = wrapInstance(int(omui.MQtUtil.mainWindow()), QtWidgets.QWidget)
     ui = TowerBuilderDialog(parent=ptr)
     ui.show()
